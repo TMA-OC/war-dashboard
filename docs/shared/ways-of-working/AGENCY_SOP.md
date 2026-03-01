@@ -525,3 +525,35 @@ Every card moved to "Waiting for Human" MUST have a comment containing:
 ### Agent self-service Kanban updates
 
 Every agent receives the project item ID for their tasks and the status option IDs. They MUST call the GitHub Projects GraphQL API to move their own cards. No manual updates by GM except for setup or corrections.
+
+
+---
+
+## SLACK NOTIFICATION PROTOCOL (added 2026-03-01)
+
+Whenever ANY card is moved to "Waiting for Human":
+
+1. Move the GitHub card to "Waiting for Human" status
+2. Add `needs-jay` label to the issue
+3. Post a detailed comment on the issue with step-by-step instructions
+4. **IMMEDIATELY send a Slack message to #vibe-briefs** with the same instructions
+
+### Slack message format for blocked items
+
+```
+🔴 *Action Required — [Project] #[issue] [title]*
+
+*What's needed:* One sentence
+*Estimated time:* X minutes
+
+*Step-by-step:*
+1. ...
+2. ...
+3. ...
+
+*Blocked tasks:* list
+*GitHub issue:* https://github.com/TMA-OC/war-dashboard/issues/[N]
+```
+
+### Who sends it
+The agent that hits the blocker sends the Slack message before stopping work on that task. GM sends it if the agent failed to. No blocked item should ever sit silently — Jay must be informed on Slack.
