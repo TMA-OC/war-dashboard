@@ -1,0 +1,10 @@
+# Cloudflare Pages configuration for War Dashboard frontend
+# This file is used for local Pages dev (wrangler pages dev dist)
+# The actual deployment is handled by cloudflare/pages-action in CI
+# TODO: needs CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID secrets in GitHub
+
+name = "war-dashboard"
+pages_build_output_dir = "dist"
+
+[build]
+command = "npm run build"
