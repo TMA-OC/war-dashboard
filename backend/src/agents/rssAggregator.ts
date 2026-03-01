@@ -156,6 +156,86 @@ export const SOURCE_REGISTRY: Record<string, SourceDef> = {
     countries: ["IQ"],
     categories: ["news", "iraq"],
   },
+  "afp": {
+    slug: "afp",
+    name: "AFP",
+    rssUrl: "https://www.afp.com/en/agencies/en/rss",
+    trustRank: 95,
+    countries: [],
+    categories: ["news", "world"],
+  },
+  "cnn-meast": {
+    slug: "cnn-meast",
+    name: "CNN Middle East",
+    rssUrl: "http://rss.cnn.com/rss/edition_meast.rss",
+    trustRank: 82,
+    countries: [],
+    categories: ["news", "middle-east"],
+  },
+  "jerusalem-post": {
+    slug: "jerusalem-post",
+    name: "The Jerusalem Post",
+    rssUrl: "https://www.jpost.com/rss/rssfeedsfrontpage.aspx",
+    trustRank: 72,
+    countries: ["IL"],
+    categories: ["news", "israel"],
+  },
+  "ynet-news": {
+    slug: "ynet-news",
+    name: "Ynet News",
+    rssUrl: "https://www.ynetnews.com/Integration/StoryRss2.xml",
+    trustRank: 72,
+    countries: ["IL"],
+    categories: ["news", "israel"],
+  },
+  "al-mayadeen": {
+    slug: "al-mayadeen",
+    name: "Al Mayadeen",
+    rssUrl: "https://english.almayadeen.net/rss.xml",
+    trustRank: 55,
+    countries: ["LB"],
+    categories: ["news", "middle-east"],
+  },
+  "middle-east-eye": {
+    slug: "middle-east-eye",
+    name: "Middle East Eye",
+    rssUrl: "https://www.middleeasteye.net/rss",
+    trustRank: 70,
+    countries: [],
+    categories: ["news", "middle-east"],
+  },
+  "rudaw": {
+    slug: "rudaw",
+    name: "Rudaw (Iraq)",
+    rssUrl: "https://www.rudaw.net/english/rss",
+    trustRank: 68,
+    countries: ["IQ"],
+    categories: ["news", "iraq", "kurdistan"],
+  },
+  "kurdistan24": {
+    slug: "kurdistan24",
+    name: "Kurdistan 24",
+    rssUrl: "https://www.kurdistan24.net/en/rss",
+    trustRank: 65,
+    countries: ["IQ"],
+    categories: ["news", "kurdistan"],
+  },
+  "al-arabiya": {
+    slug: "al-arabiya",
+    name: "Al Arabiya",
+    rssUrl: "https://english.alarabiya.net/rss.xml",
+    trustRank: 70,
+    countries: ["SA"],
+    categories: ["news", "middle-east"],
+  },
+  "press-tv": {
+    slug: "press-tv",
+    name: "Press TV",
+    rssUrl: "https://www.presstv.ir/rss",
+    trustRank: 45,
+    countries: ["IR"],
+    categories: ["news", "iran"],
+  },
 };
 
 // Country → source slug mapping for dynamic source selection
@@ -216,6 +296,32 @@ export const GEO_LOOKUP: Record<string, GeoLocation> = {
   "cairo": { name: "Cairo", lat: 30.0444, lng: 31.2357, countryCode: "EG" },
   "red sea": { name: "Red Sea", lat: 20.0, lng: 38.0, countryCode: "XX" },
   "strait of hormuz": { name: "Strait of Hormuz", lat: 26.5553, lng: 56.2500, countryCode: "XX" },
+  'northern israel': { name: 'Northern Israel', lat: 32.9, lng: 35.2, countryCode: 'IL' },
+  'southern lebanon': { name: 'Southern Lebanon', lat: 33.2, lng: 35.5, countryCode: 'LB' },
+  'west bank': { name: 'West Bank', lat: 31.9, lng: 35.2, countryCode: 'PS' },
+  'ramallah': { name: 'Ramallah', lat: 31.9, lng: 35.2, countryCode: 'PS' },
+  'jenin': { name: 'Jenin', lat: 32.46, lng: 35.30, countryCode: 'PS' },
+  'nablus': { name: 'Nablus', lat: 32.22, lng: 35.26, countryCode: 'PS' },
+  'hebron': { name: 'Hebron', lat: 31.53, lng: 35.10, countryCode: 'PS' },
+  'sidon': { name: 'Sidon', lat: 33.56, lng: 35.37, countryCode: 'LB' },
+  'tripoli': { name: 'Tripoli', lat: 34.44, lng: 35.83, countryCode: 'LB' },
+  'eilat': { name: 'Eilat', lat: 29.56, lng: 34.95, countryCode: 'IL' },
+  'dimona': { name: 'Dimona', lat: 31.07, lng: 35.03, countryCode: 'IL' },
+  'sderot': { name: 'Sderot', lat: 31.52, lng: 34.60, countryCode: 'IL' },
+  'ashkelon': { name: 'Ashkelon', lat: 31.67, lng: 34.57, countryCode: 'IL' },
+  'ashdod': { name: 'Ashdod', lat: 31.80, lng: 34.65, countryCode: 'IL' },
+  'netanya': { name: 'Netanya', lat: 32.33, lng: 34.86, countryCode: 'IL' },
+  'aden': { name: 'Aden', lat: 12.78, lng: 45.04, countryCode: 'YE' },
+  'marib': { name: 'Marib', lat: 15.46, lng: 45.32, countryCode: 'YE' },
+  'tabriz': { name: 'Tabriz', lat: 38.08, lng: 46.30, countryCode: 'IR' },
+  'shiraz': { name: 'Shiraz', lat: 29.59, lng: 52.58, countryCode: 'IR' },
+  'bushehr': { name: 'Bushehr', lat: 28.92, lng: 50.82, countryCode: 'IR' },
+  'kharg island': { name: 'Kharg Island', lat: 29.24, lng: 50.32, countryCode: 'IR' },
+  'abu dhabi': { name: 'Abu Dhabi', lat: 24.47, lng: 54.37, countryCode: 'AE' },
+  'muscat': { name: 'Muscat', lat: 23.61, lng: 58.59, countryCode: 'OM' },
+  'manama': { name: 'Manama', lat: 26.22, lng: 50.57, countryCode: 'BH' },
+  'doha': { name: 'Doha', lat: 25.29, lng: 51.53, countryCode: 'QA' },
+  'kuwait city': { name: 'Kuwait City', lat: 29.37, lng: 47.98, countryCode: 'KW' },
 };
 
 export function geocodeText(text: string): GeoLocation | null {
@@ -357,7 +463,9 @@ export async function processRssItems(
     const geo = geocodeText(text);
     const keywords = extractKeywords(text);
     const category = detectCategory(text);
-    const isBreaking = text.toLowerCase().includes("breaking");
+    const nowMs = Date.now();
+    const ageMs = nowMs - publishedAt.getTime();
+    const isBreaking = ageMs < 30 * 60 * 1000; // within last 30 minutes
 
     const confidenceResult = scoreConfidence({
       sourceIds: [sourceRow.id],
@@ -384,6 +492,7 @@ export async function processRssItems(
         sourceIds: [sourceRow.id],
         primarySourceId: sourceRow.id,
         dedupHash,
+        isBreaking,
         publishedAt,
       })
       .onConflictDoNothing()

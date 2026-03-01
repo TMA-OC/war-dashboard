@@ -3,6 +3,8 @@ import { users, pins, userPreferences, userAlerts, alerts } from "../../db/schem
 import { eq, and } from "drizzle-orm";
 import type { Alert } from "../../db/schema";
 
+// TODO: In production with multiple Worker instances, replace with Cloudflare Durable Objects
+// for cross-instance SSE fan-out. This in-memory Map only works with a single instance.
 // In-memory SSE streams: userId -> ReadableStreamDefaultController
 export const sseStreams = new Map<string, ReadableStreamDefaultController<string>>();
 

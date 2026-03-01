@@ -26,7 +26,7 @@ app.use("*", prettyJSON());
 app.use(
   "*",
   cors({
-    origin: "*",
+    origin: (origin, c) => c.env.FRONTEND_URL || "*",
     allowHeaders: ["Authorization", "Content-Type"],
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   })
