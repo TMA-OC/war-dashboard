@@ -208,6 +208,16 @@ async function addLocationPin() {
   }
 }
 
+const loadGoogleMaps = (): Promise<void> => {
+  if ((window as any).google) return Promise.resolve()
+  return new Promise((resolve) => {
+    const script = document.createElement('script')
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_KEY}&libraries=places`
+    script.onload = resolve as any
+    document.head.appendChild(script)
+  })
+}
+
 async function geocodeAddress() {
   if (!addressSearch.value.trim()) return
   const key = import.meta.env.VITE_GOOGLE_MAPS_KEY

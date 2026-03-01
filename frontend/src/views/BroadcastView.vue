@@ -67,7 +67,6 @@
     </div>
 
     <!-- BOTTOM: Breaking ticker -->
-    <div class="flex-shrink-0" style="height: 30vh" v-if="false"></div>
     <BreakingTicker class="flex-shrink-0" />
   </div>
 </template>

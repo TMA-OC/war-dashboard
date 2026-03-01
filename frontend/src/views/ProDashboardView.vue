@@ -6,22 +6,43 @@
     <div class="flex-1 flex overflow-hidden">
       <!-- Left: Full strikes map (70%) -->
       <div class="flex-1 relative overflow-hidden">
+        <!-- Empty state when no strikes -->
+        <div
+          v-if="!alertsStore.strikes.length && !alertsStore.alerts.length"
+          class="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none"
+        >
+          <div class="text-5xl mb-3">🗺️</div>
+          <p class="text-slate-400 font-medium">No strikes reported in the selected time range</p>
+          <p class="text-slate-600 text-sm mt-1">Monitoring live feeds...</p>
+        </div>
+
         <MapView
           :strikes="alertsStore.strikes"
           :pins="prefs.prefs.pins"
           :alerts="alertsStore.alerts"
         />
 
-        <!-- Legend overlay -->
-        <div class="absolute top-3 right-3 bg-slate-900/90 border border-slate-700 rounded-lg p-3 z-10">
-          <p class="text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider">Strike Recency</p>
-          <div class="space-y-1.5">
-            <div v-for="tier in legendTiers" :key="tier.label" class="flex items-center gap-2 text-xs">
-              <span :class="['w-3 h-3 rounded-full flex-shrink-0', tier.pulse ? 'animate-ping' : '']" :style="{ background: tier.color }"></span>
-              <span class="text-slate-300">{{ tier.label }}</span>
-              <span class="ml-auto font-mono text-slate-400 font-bold">{{ tier.count }}</span>
+        <!-- Map controls overlay -->
+        <div class="absolute top-3 right-3 flex flex-col gap-2 z-10">
+          <!-- Legend -->
+          <div class="bg-slate-900/90 border border-slate-700 rounded-lg p-3">
+            <p class="text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider">Strike Recency</p>
+            <div class="space-y-1.5">
+              <div v-for="tier in legendTiers" :key="tier.label" class="flex items-center gap-2 text-xs">
+                <span :class="['w-3 h-3 rounded-full flex-shrink-0', tier.pulse ? 'animate-ping' : '']" :style="{ background: tier.color }"></span>
+                <span class="text-slate-300">{{ tier.label }}</span>
+                <span class="ml-auto font-mono text-slate-400 font-bold">{{ tier.count }}</span>
+              </div>
             </div>
           </div>
+
+          <!-- Heatmap toggle -->
+          <button
+            @click="heatmapEnabled = !heatmapEnabled"
+            :class="['px-3 py-2 text-xs rounded-lg font-medium transition-all border', heatmapEnabled ? 'bg-war-orange text-white border-war-orange' : 'bg-slate-900/90 text-slate-300 border-slate-700 hover:border-slate-500']"
+          >
+            🔥 {{ heatmapEnabled ? 'Heatmap ON' : 'Heatmap' }}
+          </button>
         </div>
       </div>
 
@@ -78,7 +99,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import BreakingTicker from '@/components/layout/BreakingTicker.vue'
 import MapView from '@/components/map/MapView.vue'
@@ -89,6 +110,7 @@ import { useSSE } from '@/composables/useSSE'
 
 const alertsStore = useAlertsStore()
 const prefs = usePreferencesStore()
+const heatmapEnabled = ref(false)
 
 onMounted(async () => {
   await Promise.all([

@@ -18,9 +18,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
-import mapboxgl from 'mapbox-gl'
-import 'mapbox-gl/dist/mapbox-gl.css'
 import type { Alert, Strike, Pin } from '@/types'
+import { renderMapPopup } from '@/components/map/MapPopup.vue'
 
 const props = defineProps<{
   alerts?: Alert[]
@@ -30,7 +29,8 @@ const props = defineProps<{
 }>()
 
 const mapEl = ref<HTMLElement>()
-let map: mapboxgl.Map | null = null
+let map: any = null
+let mapboxgl: any = null
 
 const layers = ref([
   { id: 'pins', label: 'My Pins', icon: '📍', active: true },
@@ -51,8 +51,13 @@ function toggleLayer(id: string) {
   if (map.getLayer(id + '-radius')) map.setLayoutProperty(id + '-radius', 'visibility', vis)
 }
 
-function initMap() {
+async function initMap() {
   if (!mapEl.value) return
+
+  // Dynamic import to reduce initial bundle size (~1.7MB)
+  mapboxgl = (await import('mapbox-gl')).default
+  await import('mapbox-gl/dist/mapbox-gl.css')
+
   mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || ''
 
   map = new mapboxgl.Map({
@@ -82,22 +87,22 @@ function setupPinsLayer() {
       features: pins.map(p => ({
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
-        properties: { id: p.id, label: p.label, radius: p.radius },
+        properties: { id: p.id, label: p.label, radius: p.radius, radiusKm: p.radius },
       })),
     },
   })
 
-  // Radius circles
+  // Radius circles showing alert area
   map.addLayer({
     id: 'pins-radius',
     type: 'circle',
     source: 'pins',
     paint: {
-      'circle-radius': ['get', 'radius'],
-      'circle-color': '#ef4444',
+      'circle-radius': ['/', ['*', ['get', 'radiusKm'], 1000], 1],
+      'circle-color': '#3b82f6',
       'circle-opacity': 0.08,
-      'circle-stroke-color': '#ef4444',
       'circle-stroke-width': 1,
+      'circle-stroke-color': '#3b82f6',
       'circle-stroke-opacity': 0.3,
     },
   })
@@ -142,7 +147,15 @@ function setupAlertsLayer() {
       features: alerts.map(a => ({
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [a.lng!, a.lat!] },
-        properties: { id: a.id, headline: a.headline, confidence: a.confidence_label, score: a.confidence_score },
+        properties: {
+          id: a.id,
+          headline: a.headline,
+          confidence: a.confidence_label,
+          score: a.confidence_score,
+          location: a.location,
+          published_at: a.created_at,
+          sources: JSON.stringify(a.sources || []),
+        },
       })),
     },
   })
@@ -181,13 +194,23 @@ function setupAlertsLayer() {
     },
   })
 
-  map.on('click', 'alerts-unclustered', (e) => {
+  map.on('click', 'alerts-unclustered', (e: any) => {
     if (!e.features?.[0] || !map) return
-    const props = e.features[0].properties!
+    const p = e.features[0].properties!
     const coords = (e.features[0].geometry as any).coordinates.slice()
-    new mapboxgl.Popup()
+    let sources: any[] = []
+    try { sources = JSON.parse(p.sources || '[]') } catch {}
+    const html = renderMapPopup({
+      headline: p.headline,
+      confidence_label: p.confidence,
+      confidence_score: p.score,
+      location: p.location,
+      published_at: p.published_at,
+      sources,
+    })
+    new mapboxgl.Popup({ maxWidth: '320px' })
       .setLngLat(coords)
-      .setHTML(`<div class="p-2"><p class="font-bold text-sm">${props.headline}</p><p class="text-xs mt-1 text-slate-300">${props.confidence} • ${props.score}%</p></div>`)
+      .setHTML(html)
       .addTo(map)
   })
 }
