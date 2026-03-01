@@ -1,0 +1,28 @@
+name: Task
+description: Engineering / design / QA / devops task
+title: "[TASK] "
+labels: ["type:task", "track"]
+body:
+  - type: input
+    id: prd
+    attributes:
+      label: Linked PRD / Parent Issue
+      placeholder: "#2"
+  - type: textarea
+    id: what
+    attributes:
+      label: What needs to be done
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+    validations:
+      required: true
+  - type: textarea
+    id: test
+    attributes:
+      label: Test Plan
+    validations:
+      required: true

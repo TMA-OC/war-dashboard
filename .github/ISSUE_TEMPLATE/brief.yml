@@ -1,0 +1,32 @@
+name: Brief
+description: Jay submits a new product brief to the GM
+title: "[BRIEF] "
+labels: ["type:brief", "role:gm", "track"]
+body:
+  - type: textarea
+    id: overview
+    attributes:
+      label: Overview
+      description: What are we building and why?
+    validations:
+      required: true
+  - type: textarea
+    id: users
+    attributes:
+      label: Target Users
+    validations:
+      required: true
+  - type: textarea
+    id: features
+    attributes:
+      label: Key Features / Requirements
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints & Context
+  - type: textarea
+    id: success
+    attributes:
+      label: What Does Success Look Like?

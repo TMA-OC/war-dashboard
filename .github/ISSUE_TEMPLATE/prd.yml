@@ -1,0 +1,28 @@
+name: PRD
+description: PM creates a PRD from the GM brief
+title: "[PRD] "
+labels: ["type:prd", "role:pm", "track"]
+body:
+  - type: input
+    id: brief
+    attributes:
+      label: Linked Brief Issue
+      placeholder: "#1"
+    validations:
+      required: true
+  - type: textarea
+    id: overview
+    attributes:
+      label: Product Overview
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+    validations:
+      required: true
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Task Breakdown (sub-issues)
