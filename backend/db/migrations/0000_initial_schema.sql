@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
   email         TEXT NOT NULL UNIQUE,
   password_hash TEXT,
   google_id     TEXT UNIQUE,
-  plan          TEXT NOT NULL DEFAULT 'free',  -- 'free' | 'pro'
+  tier          VARCHAR NOT NULL DEFAULT 'individual',  -- 'individual' | 'pro'
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -41,9 +41,9 @@ CREATE TABLE IF NOT EXISTS pins (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   label      TEXT NOT NULL,
-  lat        REAL NOT NULL,
-  lng        REAL NOT NULL,
-  radius_km  REAL NOT NULL DEFAULT 50,
+  lat        DOUBLE PRECISION NOT NULL,
+  lng        DOUBLE PRECISION NOT NULL,
+  radius_km  DOUBLE PRECISION NOT NULL DEFAULT 50,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -53,10 +53,11 @@ CREATE TABLE IF NOT EXISTS pins (
 CREATE TABLE IF NOT EXISTS sources (
   id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name           TEXT NOT NULL,
-  url            TEXT NOT NULL UNIQUE,  -- RSS feed URL
+  slug           VARCHAR(64) UNIQUE NOT NULL,
+  url            TEXT NOT NULL UNIQUE,
   homepage       TEXT NOT NULL,
   icon_url       TEXT,
-  trust_rank     INTEGER NOT NULL DEFAULT 50,  -- 1–100
+  trust_rank     INTEGER NOT NULL DEFAULT 50,
   active         BOOLEAN NOT NULL DEFAULT TRUE,
   last_polled_at TIMESTAMPTZ
 );
@@ -65,22 +66,22 @@ CREATE TABLE IF NOT EXISTS sources (
 -- alerts
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS alerts (
-  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  headline       TEXT NOT NULL,
-  body           TEXT,
-  url            TEXT NOT NULL,
-  source_ids     UUID[] NOT NULL DEFAULT '{}',
-  category       TEXT,            -- 'airstrike' | 'ground' | 'naval' | …
-  country_code   TEXT,
-  lat            REAL,
-  lng            REAL,
-  geo_precision  TEXT,            -- 'city' | 'region' | 'country' | 'unknown'
-  confidence     REAL NOT NULL DEFAULT 0.5,  -- 0–1
-  is_breaking    BOOLEAN NOT NULL DEFAULT FALSE,
-  is_strike      BOOLEAN NOT NULL DEFAULT FALSE,
-  published_at   TIMESTAMPTZ NOT NULL,
-  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  dedup_hash     TEXT NOT NULL,
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  headline         TEXT NOT NULL,
+  body             TEXT,
+  url              TEXT NOT NULL,
+  source_ids       UUID[] NOT NULL DEFAULT '{}',
+  category         TEXT,
+  country_code     TEXT,
+  lat              DOUBLE PRECISION,
+  lng              DOUBLE PRECISION,
+  geo_precision    TEXT,
+  confidence_score DOUBLE PRECISION NOT NULL DEFAULT 0.5,
+  is_breaking      BOOLEAN NOT NULL DEFAULT false,
+  is_strike        BOOLEAN NOT NULL DEFAULT FALSE,
+  published_at     TIMESTAMPTZ NOT NULL,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  dedup_hash       TEXT NOT NULL,
   CONSTRAINT alerts_dedup_hash_unique UNIQUE (dedup_hash)
 );
 
@@ -93,7 +94,7 @@ CREATE TABLE IF NOT EXISTS user_alerts (
   alert_id    UUID NOT NULL REFERENCES alerts(id) ON DELETE CASCADE,
   is_read     BOOLEAN NOT NULL DEFAULT FALSE,
   is_pinned   BOOLEAN NOT NULL DEFAULT FALSE,
-  matched_via TEXT[] NOT NULL DEFAULT '{}',  -- ['pin:uuid', 'nationality:LB']
+  matched_via TEXT[] NOT NULL DEFAULT '{}',
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -103,8 +104,8 @@ CREATE TABLE IF NOT EXISTS user_alerts (
 CREATE TABLE IF NOT EXISTS strikes (
   id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   alert_id           UUID NOT NULL REFERENCES alerts(id) ON DELETE CASCADE,
-  lat                REAL NOT NULL,
-  lng                REAL NOT NULL,
+  lat                DOUBLE PRECISION NOT NULL,
+  lng                DOUBLE PRECISION NOT NULL,
   location_name      TEXT,
   confirmed_killed   INTEGER NOT NULL DEFAULT 0,
   confirmed_wounded  INTEGER NOT NULL DEFAULT 0,
@@ -118,9 +119,11 @@ CREATE TABLE IF NOT EXISTS strikes (
 CREATE INDEX IF NOT EXISTS idx_pins_user_id            ON pins(user_id);
 CREATE INDEX IF NOT EXISTS idx_alerts_published_at     ON alerts(published_at DESC);
 CREATE INDEX IF NOT EXISTS idx_alerts_country_code     ON alerts(country_code);
-CREATE INDEX IF NOT EXISTS idx_alerts_is_breaking      ON alerts(is_breaking) WHERE is_breaking = TRUE;
+CREATE INDEX IF NOT EXISTS idx_alerts_confidence       ON alerts(confidence_score DESC);
+CREATE INDEX IF NOT EXISTS idx_alerts_is_breaking      ON alerts(is_breaking) WHERE is_breaking = true;
 CREATE INDEX IF NOT EXISTS idx_alerts_is_strike        ON alerts(is_strike) WHERE is_strike = TRUE;
-CREATE INDEX IF NOT EXISTS idx_user_alerts_user_id     ON user_alerts(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_alerts_user_id     ON user_alerts(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_user_alerts_alert_id    ON user_alerts(alert_id);
+CREATE INDEX IF NOT EXISTS idx_sources_slug            ON sources(slug);
 CREATE INDEX IF NOT EXISTS idx_strikes_alert_id        ON strikes(alert_id);
 CREATE INDEX IF NOT EXISTS idx_strikes_occurred_at     ON strikes(occurred_at DESC);
