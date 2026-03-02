@@ -557,3 +557,33 @@ Whenever ANY card is moved to "Waiting for Human":
 
 ### Who sends it
 The agent that hits the blocker sends the Slack message before stopping work on that task. GM sends it if the agent failed to. No blocked item should ever sit silently — Jay must be informed on Slack.
+
+
+---
+
+## GITHUB API OPTIMIZATION (added 2026-03-02)
+
+### Rules
+
+1. **Only the GM moves Kanban cards.** Agents must NOT make GitHub API calls to update project boards.
+   Agents: post progress comments on issues only. GM batches all Kanban moves at milestone points.
+
+2. **Batch all Kanban moves.** Use `docs/shared/tools/gh.py kanban-milestone` to move multiple cards in ONE GraphQL request.
+   ❌ Wrong: loop calling updateProjectV2ItemFieldValue 19 times = 19 API calls
+   ✅ Right: `python3 gh.py kanban-milestone in-review 5 6 7 8 9 10` = 1 API call
+
+3. **Use gh.py for all GitHub API calls.** It handles rate-limit pre-checks, auto-sleep, and backoff.
+   ```bash
+   GH_TOOLS=/home/node/.openclaw/workspace/docs/shared/tools
+   python3 $GH_TOOLS/gh.py check-rate
+   python3 $GH_TOOLS/gh.py kanban-milestone in-review 5 6 7 8 9
+   python3 $GH_TOOLS/gh.py comment TMA-OC/war-dashboard 26 "body text"
+   ```
+
+4. **No concurrent agent API calls.** Stagger agent spawns by 30s minimum if they'll need GitHub API.
+
+5. **Rate limit budget per milestone:**
+   - One batch kanban move = 1 GraphQL call (regardless of # of cards)
+   - One PR open = 1 REST call
+   - One comment = 1 REST call
+   - Target: < 10 GitHub API calls per milestone cycle
