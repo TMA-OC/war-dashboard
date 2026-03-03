@@ -2,6 +2,7 @@ import { getDb, type Env } from "../../db/client";
 import { alerts, sources, strikes } from "../../db/schema";
 import { eq, inArray } from "drizzle-orm";
 import { scoreConfidence, getConfidenceLabel } from "./confidenceScorer";
+import { runDeduplication, summariseDeduplicationRun, type DeduplicationResult } from "./eventDeduplicator";
 
 // ─── War keyword filter ───────────────────────────────────────────────────────
 
@@ -417,6 +418,9 @@ export async function processRssItems(
   const db = getDb(env);
   let inserted = 0;
 
+  // Track dedup results for monitoring
+  const dedupResults: DeduplicationResult[] = [];
+
   for (const item of items) {
     const text = `${item.title ?? ""} ${item.contentSnippet ?? ""}`;
 
@@ -425,42 +429,37 @@ export async function processRssItems(
     const publishedAt = item.pubDate ? new Date(item.pubDate) : new Date();
     if (isNaN(publishedAt.getTime())) continue;
 
-    const dedupHash = generateDedupHash(item.title ?? "", publishedAt);
+    const geo = geocodeText(text);
 
-    // Check for existing alert with same dedup hash
-    const [existing] = await db
+    // ── Phase 1: Hash-based exact dedup (fast path) ────────────────────────
+    const dedupHash = generateDedupHash(item.title ?? "", publishedAt);
+    const [exactMatch] = await db
       .select()
       .from(alerts)
       .where(eq(alerts.dedupHash, dedupHash))
       .limit(1);
 
-    if (existing) {
-      // Add source to existing alert + recalculate confidence
-      const existingSourceIds = existing.sourceIds ?? [];
-      if (!existingSourceIds.includes(sourceRow.id)) {
-        const newSourceIds = [...existingSourceIds, sourceRow.id];
-        // Re-score with new corroboration
-        const result = scoreConfidence({
-          sourceIds: newSourceIds,
-          sourceTrustRanks: [sourceRow.trustRank, ...Array(existingSourceIds.length).fill(70)],
-          publishedAt,
-          isBreaking: existing.confidenceScore >= 0.8,
-        });
-        await db
-          .update(alerts)
-          .set({
-            sourceIds: newSourceIds,
-            confidenceScore: result.score,
-            confidenceLabel: result.label,
-            updatedAt: new Date(),
-          })
-          .where(eq(alerts.id, existing.id));
-      }
+    if (exactMatch) {
+      // Same source/date hash — skip silently (already handled)
+      dedupResults.push({ action: "merged", alertId: exactMatch.id, similarity: 1.0 });
       continue;
     }
 
-    // New alert
-    const geo = geocodeText(text);
+    // ── Phase 2: Semantic dedup (title similarity + geo + time window) ────
+    const dedupResult = await runDeduplication(env, {
+      title: item.title ?? "",
+      publishedAt,
+      countryCode: geo?.countryCode,
+    }, sourceRow);
+
+    dedupResults.push(dedupResult);
+
+    if (dedupResult.action === "merged") {
+      // Duplicate found — source was merged into existing alert
+      continue;
+    }
+
+    // ── Phase 3: New alert ────────────────────────────────────────────────
     const keywords = extractKeywords(text);
     const category = detectCategory(text);
     const nowMs = Date.now();
@@ -501,6 +500,10 @@ export async function processRssItems(
     if (!alert) continue;
     inserted++;
 
+    // Update the dedupResult with the real alertId now that we have it
+    const lastResult = dedupResults[dedupResults.length - 1];
+    if (lastResult) lastResult.alertId = alert.id;
+
     // If strike event, also insert into strikes table
     if (geo && isStrikeEvent(text)) {
       await db
@@ -518,6 +521,15 @@ export async function processRssItems(
         })
         .onConflictDoNothing();
     }
+  }
+
+  // ── Monitoring: log dedup rate for this source ────────────────────────────
+  if (dedupResults.length > 0) {
+    const { total, merged, created, dedupRate } = summariseDeduplicationRun(dedupResults);
+    console.log(
+      `[dedup:${sourceDef.slug}] total=${total} created=${created} merged=${merged} ` +
+      `dedup_rate=${(dedupRate * 100).toFixed(1)}%`
+    );
   }
 
   return inserted;
