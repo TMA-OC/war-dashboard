@@ -2,6 +2,7 @@ import { getDb, type Env } from "../../db/client";
 import { alerts, sources, strikes } from "../../db/schema";
 import { eq, inArray } from "drizzle-orm";
 import { scoreConfidence, getConfidenceLabel } from "./confidenceScorer";
+import { geocodeArticle } from "./geocoder";
 
 // ─── War keyword filter ───────────────────────────────────────────────────────
 
@@ -460,7 +461,9 @@ export async function processRssItems(
     }
 
     // New alert
-    const geo = geocodeText(text);
+    // Geocode: try fast static lookup first, then Nominatim API fallback
+    const staticGeo = geocodeText(text);
+    const geo = staticGeo ?? await geocodeArticle(item.title ?? "", item.contentSnippet);
     const keywords = extractKeywords(text);
     const category = detectCategory(text);
     const nowMs = Date.now();

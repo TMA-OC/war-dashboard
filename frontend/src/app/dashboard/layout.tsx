@@ -4,10 +4,31 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, Map, Settings, LogOut, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { requestNotificationPermission } from "@/lib/notifications";
+import type { UserPreferences } from "@/types";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
+  const token = (session as any)?.accessToken as string | undefined;
   const pathname = usePathname();
+
+  const { data: prefsData } = useQuery({
+    queryKey: ["preferences"],
+    queryFn: () => api.getPreferences(token!),
+    enabled: !!token,
+  });
+
+  const prefs = prefsData as UserPreferences | undefined;
+
+  // Request notification permission on mount if user has enabled notifications
+  useEffect(() => {
+    if (prefs?.notificationsEnabled) {
+      requestNotificationPermission().catch(() => {});
+    }
+  }, [prefs?.notificationsEnabled]);
 
   const nav = [
     { href: "/dashboard", label: "Feed", icon: Bell },

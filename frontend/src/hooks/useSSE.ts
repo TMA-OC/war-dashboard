@@ -2,6 +2,7 @@
 import { useEffect, useCallback, useRef } from "react";
 import type { Alert } from "@/types";
 import { API_URL } from "@/lib/api";
+import { sendLocalNotification } from "@/lib/notifications";
 
 export function useSSE(token: string | undefined, onAlert: (alert: Alert) => void) {
   const onAlertRef = useRef(onAlert);
@@ -14,7 +15,19 @@ export function useSSE(token: string | undefined, onAlert: (alert: Alert) => voi
     es.onmessage = (e) => {
       try {
         const data = JSON.parse(e.data);
-        if (data.type === "alert") onAlertRef.current(data.alert);
+        if (data.type === "alert") {
+          const alert: Alert = data.alert;
+          onAlertRef.current(alert);
+
+          // Trigger local notification for high-confidence alerts
+          if (alert.confidenceScore >= 70) {
+            const title = alert.isBreaking
+              ? `🚨 BREAKING: ${alert.headline}`
+              : `⚔️ ${alert.headline}`;
+            const body = alert.summary || alert.headline;
+            sendLocalNotification(title, body, alert.confidenceScore).catch(() => {});
+          }
+        }
       } catch {}
     };
     es.onerror = () => {

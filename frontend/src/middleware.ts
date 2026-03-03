@@ -5,5 +5,6 @@ export default withAuth({
 });
 
 export const config = {
+  // Protect dashboard and pro routes; widget and public pages are open
   matcher: ["/dashboard/:path*", "/pro/:path*"],
 };
