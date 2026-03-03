@@ -6,6 +6,7 @@ import type { Env } from "../db/client";
 import authRouter from "./routes/auth";
 import alertsRouter from "./routes/alerts";
 import prefsRouter from "./routes/preferences";
+import sourcesRouter from "./routes/sources";
 import sseRouter from "./routes/sse";
 import { pollAllFeeds } from "./cron/pollFeeds";
 
@@ -42,6 +43,7 @@ app.get("/health", (c) => c.json({ status: "ok", ts: new Date().toISOString() })
 app.route("/auth", authRouter);
 app.route("/alerts", alertsRouter);
 app.route("/preferences", prefsRouter);
+app.route("/sources", sourcesRouter);
 app.route("/sse", sseRouter);
 
 // ─── Cloudflare Workers export ────────────────────────────────────────────────

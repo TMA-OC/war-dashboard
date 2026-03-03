@@ -13,6 +13,69 @@ const auth = new Hono<AppEnv>();
 
 const SALT_ROUNDS = 10;
 
+// ─── Rate Limiting (in-memory, per IP) ────────────────────────────────────────
+// In production, use Cloudflare's built-in rate limiting or a KV store
+
+interface RateLimitEntry {
+  count: number;
+  resetAt: number;
+}
+
+const rateLimitMap = new Map<string, RateLimitEntry>();
+
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const RATE_LIMIT_MAX_REQUESTS = 20; // Max 20 auth attempts per 15 min window
+
+function getRateLimitKey(ip: string, endpoint: string): string {
+  return `${ip}:${endpoint}`;
+}
+
+function checkRateLimit(key: string): { allowed: boolean; remaining: number; resetAt: number } {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+
+  // Clean up expired entries
+  if (entry && entry.resetAt < now) {
+    rateLimitMap.delete(key);
+  }
+
+  const existing = rateLimitMap.get(key);
+
+  if (!existing) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - 1, resetAt: now + RATE_LIMIT_WINDOW_MS };
+  }
+
+  if (existing.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return { allowed: false, remaining: 0, resetAt: existing.resetAt };
+  }
+
+  existing.count++;
+  return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - existing.count, resetAt: existing.resetAt };
+}
+
+// Rate limit middleware for auth endpoints
+const rateLimitMiddleware = async (c: any, next: any) => {
+  const ip = c.req.header("cf-connecting-ip") || c.req.header("x-forwarded-for") || "unknown";
+  const endpoint = c.req.path;
+  const key = getRateLimitKey(ip, endpoint);
+
+  const { allowed, remaining, resetAt } = checkRateLimit(key);
+
+  c.header("X-RateLimit-Limit", RATE_LIMIT_MAX_REQUESTS.toString());
+  c.header("X-RateLimit-Remaining", remaining.toString());
+  c.header("X-RateLimit-Reset", Math.ceil(resetAt / 1000).toString());
+
+  if (!allowed) {
+    return c.json(
+      { error: "Too many requests. Please try again later." },
+      429
+    );
+  }
+
+  await next();
+};
+
 function signToken(userId: string, secret: string): Promise<string> {
   return sign(
     { sub: userId, iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30 },
@@ -23,6 +86,7 @@ function signToken(userId: string, secret: string): Promise<string> {
 // POST /auth/register
 auth.post(
   "/register",
+  rateLimitMiddleware,
   zValidator(
     "json",
     z.object({
@@ -59,6 +123,7 @@ auth.post(
 // POST /auth/login
 auth.post(
   "/login",
+  rateLimitMiddleware,
   zValidator(
     "json",
     z.object({
@@ -92,6 +157,7 @@ auth.post(
 // POST /auth/google
 auth.post(
   "/google",
+  rateLimitMiddleware,
   zValidator("json", z.object({ id_token: z.string() })),
   async (c) => {
     const { id_token } = c.req.valid("json");
@@ -102,7 +168,7 @@ auth.post(
       return c.json({ error: "Invalid Google token" }, 401);
     }
 
-    const googlePayload = await googleRes.json() as {
+    const googlePayload = (await googleRes.json()) as {
       sub: string;
       email: string;
       name?: string;
