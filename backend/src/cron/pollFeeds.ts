@@ -2,6 +2,7 @@ import { getDb, type Env } from "../../db/client";
 import { sources } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { SOURCE_REGISTRY, processRssItems, type RssItem } from "../agents/rssAggregator";
+import { isDuplicate, markSeen } from "../agents/deduplicator";
 import { matchAlertToUsers } from "../agents/alertMatcher";
 import { alerts } from "../../db/schema";
 import { desc, gt } from "drizzle-orm";
@@ -97,7 +98,14 @@ export async function pollAllFeeds(env: Env): Promise<{ polled: number; inserted
       const def = SOURCE_REGISTRY[src.slug];
       if (!def) continue;
 
-      const inserted = await processRssItems(env, def, { id: src.id, trustRank: src.trustRank }, items);
+      // Filter out duplicates (fast in-memory check before DB)
+      const uniqueItems = items.filter((item) => {
+        if (isDuplicate(item.title, item.pubDate)) return false;
+        markSeen(item.title, item.pubDate);
+        return true;
+      });
+
+      const inserted = await processRssItems(env, def, { id: src.id, trustRank: src.trustRank }, uniqueItems);
       totalInserted += inserted;
       polled++;
 
