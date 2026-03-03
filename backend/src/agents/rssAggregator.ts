@@ -2,6 +2,7 @@ import { getDb, type Env } from "../../db/client";
 import { alerts, sources, strikes } from "../../db/schema";
 import { eq, inArray } from "drizzle-orm";
 import { scoreConfidence, getConfidenceLabel } from "./confidenceScorer";
+import { geocodeTextAsync } from "./geocoder";
 
 // ─── War keyword filter ───────────────────────────────────────────────────────
 
@@ -460,7 +461,7 @@ export async function processRssItems(
     }
 
     // New alert
-    const geo = geocodeText(text);
+    const geo = await geocodeTextAsync(text, { MAPBOX_ACCESS_TOKEN: (env as Record<string,string>)["MAPBOX_ACCESS_TOKEN"] ?? (env as Record<string,string>)["MAPBOX_TOKEN"] });
     const keywords = extractKeywords(text);
     const category = detectCategory(text);
     const nowMs = Date.now();
