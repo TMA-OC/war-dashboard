@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { useSSE } from "@/hooks/useSSE";
 import { AlertCard } from "@/components/alerts/AlertCard";
 import type { Alert } from "@/types";
-import { RefreshCw, Filter } from "lucide-react";
+import { RefreshCw, Filter, ChevronDown } from "lucide-react";
 
 const TOPICS = ["All", "Airstrikes", "Missile launches", "Ceasefire", "Sanctions", "Nuclear", "Ground ops", "Casualties"];
 
@@ -17,6 +17,7 @@ export default function DashboardPage() {
   const [topicFilter, setTopicFilter] = useState("All");
   const [minConfidence, setMinConfidence] = useState(0);
   const [liveAlerts, setLiveAlerts] = useState<Alert[]>([]);
+  const [showAllFilters, setShowAllFilters] = useState(false);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["alerts", topicFilter, minConfidence],
@@ -39,30 +40,33 @@ export default function DashboardPage() {
     ? allAlerts
     : allAlerts.filter(a => a.topics.some(t => t.toLowerCase().includes(topicFilter.toLowerCase())));
 
+  // On mobile, show fewer filter buttons initially
+  const visibleTopics = showAllFilters ? TOPICS : TOPICS.slice(0, 4);
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full max-w-full overflow-x-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-white">Intelligence Feed</h1>
-          <p className="text-sm text-gray-400">{filtered.length} alerts • Live updates active</p>
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <h1 className="text-lg sm:text-xl font-bold text-white">Intelligence Feed</h1>
+          <p className="text-xs sm:text-sm text-gray-400">{filtered.length} alerts • Live updates active</p>
         </div>
         <button
           onClick={() => refetch()}
-          className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition"
+          className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition shrink-0"
         >
           <RefreshCw className="w-4 h-4" />
         </button>
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 flex-wrap items-center">
-        <Filter className="w-4 h-4 text-gray-500" />
-        {TOPICS.map(t => (
+      <div className="flex gap-2 flex-wrap items-center w-full">
+        <Filter className="w-4 h-4 text-gray-500 shrink-0" />
+        {visibleTopics.map(t => (
           <button
             key={t}
             onClick={() => setTopicFilter(t)}
-            className={`text-xs px-3 py-1 rounded-full border transition ${
+            className={`text-xs px-2.5 sm:px-3 py-1 rounded-full border transition whitespace-nowrap ${
               topicFilter === t
                 ? "bg-blue-600 border-blue-600 text-white"
                 : "border-gray-700 text-gray-400 hover:border-gray-500"
@@ -71,10 +75,19 @@ export default function DashboardPage() {
             {t}
           </button>
         ))}
+        {!showAllFilters && TOPICS.length > 4 && (
+          <button
+            onClick={() => setShowAllFilters(true)}
+            className="text-xs px-2 py-1 text-gray-500 hover:text-gray-300 transition flex items-center gap-1"
+          >
+            <ChevronDown className="w-3 h-3" />
+            More
+          </button>
+        )}
         <select
           value={minConfidence}
           onChange={e => setMinConfidence(Number(e.target.value))}
-          className="ml-auto text-xs bg-[#1a1a28] border border-gray-700 text-gray-300 rounded-lg px-2 py-1"
+          className="ml-auto text-xs bg-[#1a1a28] border border-gray-700 text-gray-300 rounded-lg px-2 py-1 shrink-0"
         >
           <option value={0}>All confidence</option>
           <option value={50}>≥50% Unverified</option>

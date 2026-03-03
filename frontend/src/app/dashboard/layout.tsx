@@ -37,12 +37,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   ];
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex flex-col">
+    <div className="min-h-screen bg-[#0a0a0f] flex flex-col overflow-x-hidden">
       {/* Top nav */}
-      <header className="border-b border-gray-800 bg-[#0a0a0f]/80 backdrop-blur sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="font-bold text-white text-lg tracking-tight">⚔️ WAR INTEL</Link>
+      <header className="border-b border-gray-800 bg-[#0a0a0f]/80 backdrop-blur sticky top-0 z-50 w-full">
+        <div className="max-w-5xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-3 sm:gap-6 min-w-0">
+            <Link href="/dashboard" className="font-bold text-white text-base sm:text-lg tracking-tight shrink-0">⚔️ WAR INTEL</Link>
             <nav className="hidden sm:flex items-center gap-1">
               {nav.map(n => (
                 <Link
@@ -61,13 +61,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               ))}
             </nav>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {(session?.user as any)?.tier === "pro" && (
-              <Link href="/pro" className="flex items-center gap-1 text-xs px-2.5 py-1 bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-full hover:bg-yellow-500/30 transition">
-                <Zap className="w-3 h-3" /> PRO
+              <Link href="/pro" className="flex items-center gap-1 text-xs px-2 sm:px-2.5 py-1 bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-full hover:bg-yellow-500/30 transition">
+                <Zap className="w-3 h-3" /> <span className="hidden xs:inline">PRO</span>
               </Link>
             )}
-            <span className="text-sm text-gray-400 hidden sm:block">{session?.user?.email}</span>
+            <span className="text-sm text-gray-400 hidden md:block truncate max-w-[150px]">{session?.user?.email}</span>
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
               className="p-1.5 text-gray-500 hover:text-white transition"
@@ -80,7 +80,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </header>
 
       {/* Mobile nav */}
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 border-t border-gray-800 bg-[#0a0a0f] z-50 flex">
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 border-t border-gray-800 bg-[#0a0a0f] z-50 flex w-full">
         {nav.map(n => (
           <Link
             key={n.href}
@@ -96,7 +96,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         ))}
       </nav>
 
-      <main className="flex-1 max-w-5xl mx-auto w-full px-4 pb-20 sm:pb-8 pt-4">
+      <main className="flex-1 w-full max-w-5xl mx-auto px-3 sm:px-4 pb-20 sm:pb-8 pt-4 overflow-x-hidden">
         {children}
       </main>
     </div>

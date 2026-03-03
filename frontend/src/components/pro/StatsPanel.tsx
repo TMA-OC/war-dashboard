@@ -20,11 +20,11 @@ export function StatsPanel({ alerts, strikes }: StatsPanelProps) {
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-2 gap-2 w-full max-w-full">
       {stats.map(s => (
-        <div key={s.label} className="bg-[#0d0d14] border border-gray-800 rounded-lg p-3">
-          <div className={`text-2xl font-black font-mono ${s.color}`}>{s.value}</div>
-          <div className="text-xs text-gray-500 mt-0.5">{s.label}</div>
+        <div key={s.label} className="bg-[#0d0d14] border border-gray-800 rounded-lg p-2 sm:p-3 overflow-hidden">
+          <div className={`text-xl sm:text-2xl font-black font-mono ${s.color} truncate`}>{s.value}</div>
+          <div className="text-xs text-gray-500 mt-0.5 truncate">{s.label}</div>
         </div>
       ))}
     </div>

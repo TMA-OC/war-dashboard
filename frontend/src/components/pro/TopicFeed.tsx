@@ -15,37 +15,39 @@ export function TopicFeed({ alerts }: { alerts: Alert[] }) {
     : alerts.filter(a => a.topics.some(t => t.toLowerCase().includes(topic.toLowerCase())));
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Topic filters */}
-      <div className="flex gap-1 flex-wrap p-2 border-b border-gray-800 shrink-0">
-        {TOPICS.map(t => (
-          <button
-            key={t}
-            onClick={() => setTopic(t)}
-            className={`text-xs px-2 py-1 rounded transition ${
-              topic === t ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white"
-            }`}
-          >
-            {t}
-          </button>
-        ))}
+    <div className="flex flex-col h-full w-full max-w-full overflow-hidden">
+      {/* Topic filters - scrollable */}
+      <div className="flex gap-1 p-2 border-b border-gray-800 shrink-0 overflow-x-auto">
+        <div className="flex gap-1 shrink-0">
+          {TOPICS.map(t => (
+            <button
+              key={t}
+              onClick={() => setTopic(t)}
+              className={`text-xs px-2 py-1 rounded transition whitespace-nowrap ${
+                topic === t ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
       </div>
       {/* Feed */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-2">
+      <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
         {filtered.length === 0 && (
           <div className="text-center py-8 text-gray-600 text-sm">No alerts for this topic</div>
         )}
         {filtered.slice(0, 50).map(alert => {
           const badge = getConfidenceBadge(alert.confidenceScore);
           return (
-            <div key={alert.id} className="p-2.5 bg-[#0d0d14] border border-gray-800 rounded-lg">
+            <div key={alert.id} className="p-2.5 bg-[#0d0d14] border border-gray-800 rounded-lg w-full max-w-full overflow-hidden">
               <div className="flex items-start gap-2">
                 <span className={`text-xs font-bold ${badge.color} shrink-0 mt-0.5`}>{badge.emoji}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-white leading-tight line-clamp-2">{alert.headline}</p>
-                  <div className="flex items-center gap-2 mt-1">
+                <div className="flex-1 min-w-0 overflow-hidden">
+                  <p className="text-xs text-white leading-tight line-clamp-2 break-words">{alert.headline}</p>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <span className="text-xs text-gray-500">{formatRelativeTime(alert.publishedAt)}</span>
-                    {alert.locationName && <span className="text-xs text-gray-600">{alert.locationName}</span>}
+                    {alert.locationName && <span className="text-xs text-gray-600 truncate max-w-[120px]">{alert.locationName}</span>}
                   </div>
                 </div>
                 <a href={alert.url} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-blue-400 transition shrink-0">
