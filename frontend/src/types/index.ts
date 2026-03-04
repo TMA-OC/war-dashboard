@@ -1,70 +1,68 @@
 export interface Alert {
-  id: string;
-  headline: string;
-  summary?: string;
-  url: string;
-  imageUrl?: string;
-  lat?: number;
-  lng?: number;
-  locationName?: string;
-  countryCode?: string;
-  category?: string;
-  topics: string[];
-  keywords: string[];
-  confidenceScore: number;
-  confidenceLabel: string;
-  isBreaking: boolean;
-  publishedAt: string;
-  createdAt: string;
-  source?: {
-    id: string;
-    name: string;
-    logoUrl?: string;
-    slug: string;
-  };
+  id: string
+  headline: string
+  summary: string
+  content?: string
+  category: string
+  is_breaking: boolean
+  confidence_label: 'VERIFIED' | 'LIKELY' | 'UNVERIFIED' | 'RUMOR'
+  confidence_score: number
+  location?: string
+  lat?: number
+  lng?: number
+  sources: Source[]
+  created_at: string
+  read?: boolean
+}
+
+export interface Source {
+  name: string
+  url: string
+  favicon?: string
 }
 
 export interface Strike {
-  id: string;
-  lat: number;
-  lng: number;
-  locationName?: string;
-  countryCode?: string;
-  strikeType?: string;
-  casualties?: number;
-  confidenceScore: number;
-  publishedAt: string;
-  createdAt: string;
+  id: string
+  location: string
+  type: string
+  lat: number
+  lng: number
+  created_at: string
+  confidence_score: number
+  reports?: Alert[]
 }
 
 export interface Pin {
-  id: string;
-  label: string;
-  lat: number;
-  lng: number;
-  radiusKm: number;
-  countryCode?: string;
-  isActive: boolean;
-  createdAt: string;
+  id: string
+  label: string
+  lat: number
+  lng: number
+  radius: number
 }
 
 export interface UserPreferences {
-  id: string;
-  userId: string;
-  nationalities: string[];
-  watchedCountries: string[];
-  topics: string[];
-  brandingLogoUrl?: string;
-  brandingColor?: string;
-  brandingOrgName?: string;
-  notificationsEnabled: boolean;
-  emailDigestEnabled: boolean;
+  nationality: string[]
+  pins: Pin[]
+  topic_tags: string[]
+  notifications_enabled: boolean
+  branding?: {
+    logo_url?: string
+    primary_color?: string
+    display_name?: string
+  }
+  source_filters?: Record<string, boolean>
 }
 
 export interface User {
-  id: string;
-  email: string;
-  displayName?: string;
-  avatarUrl?: string;
-  tier: "individual" | "pro";
+  id: string
+  name: string
+  email: string
+  tier: 'individual' | 'pro'
+}
+
+export interface Casualties {
+  killed_24h: number
+  wounded_24h: number
+  updated_at: string
+  by_country?: Record<string, { killed: number; wounded: number }>
 }
