@@ -1,17 +1,15 @@
-# Local Setup Runbook — War Dashboard
+# Local Dev Setup Runbook — War News Intelligence Dashboard
 
-This guide gets a local development environment running from scratch.
+**Closes #22**
 
 ---
 
 ## Prerequisites
 
-| Tool | Version | Install |
-|------|---------|---------|
-| Node.js | ≥ 20 | [nodejs.org](https://nodejs.org) |
-| npm | ≥ 10 | bundled with Node |
-| Git | any | [git-scm.com](https://git-scm.com) |
-| Wrangler CLI | ≥ 3 | `npm i -g wrangler` |
+- **Node.js 20+** — check: `node --version`
+- **npm 10+** — check: `npm --version`
+- **Git** — check: `git --version`
+- **Wrangler CLI** (for Cloudflare Workers backend) — `npm install -g wrangler`
 
 ---
 
@@ -21,136 +19,145 @@ This guide gets a local development environment running from scratch.
 git clone https://github.com/TMA-OC/war-dashboard.git
 cd war-dashboard
 
-# Frontend
+# Install frontend deps
 cd frontend && npm install && cd ..
 
-# Backend
+# Install backend deps
 cd backend && npm install && cd ..
 ```
 
 ---
 
-## 2. Supabase Setup
+## 2. Environment Setup
 
-### 2.1 Create a free Supabase project
+### Frontend — `frontend/.env.local`
 
-1. Go to [supabase.com](https://supabase.com) and sign in.
-2. Click **New Project** → fill in name (`war-dashboard`), password, and region.
-3. Wait ~2 minutes for provisioning.
-
-### 2.2 Get the connection string
-
-1. In your project dashboard → **Settings → Database**.
-2. Under **Connection string → URI**, copy the string.
-3. It looks like:
-   ```
-   postgresql://postgres:[YOUR-PASSWORD]@db.<ref>.supabase.co:5432/postgres
-   ```
-
-### 2.3 Configure environment
-
-```bash
-cp .env.example .env
+```env
+VITE_API_URL=http://localhost:8787
+VITE_MAPBOX_TOKEN=your_mapbox_token
+VITE_GOOGLE_MAPS_KEY=your_google_maps_key
 ```
 
-Edit `.env` and set:
-```
-DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.<ref>.supabase.co:5432/postgres?sslmode=require
-```
+- Get a free Mapbox token at https://mapbox.com (required for map view)
+- Google Maps key optional (used for geocoding only)
 
-### 2.4 Run the initial migration
+### Backend — `backend/.env`
 
-Option A — Drizzle push (quick for dev):
-```bash
-cd backend
-npx drizzle-kit push
+```env
+DATABASE_URL=postgresql://postgres:<password>@db.<project-ref>.supabase.co:5432/postgres
+JWT_SECRET=any-random-32-char-string-here
+FRONTEND_URL=http://localhost:5173
 ```
 
-Option B — Run the SQL migration manually in Supabase SQL editor:
-```bash
-cat backend/db/migrations/0000_initial_schema.sql
-# paste into Supabase → SQL Editor → Run
-```
+Generate a JWT secret: `openssl rand -hex 16`
 
-### 2.5 Seed news sources
+---
+
+## 3. Database Setup (Supabase — Free Tier)
+
+1. Create account at https://supabase.com
+2. New project → choose region closest to you → set password
+3. Go to **Settings → Database → Connection String** → copy the URI
+4. Paste into `backend/.env` as `DATABASE_URL`
+5. Run migrations and seed:
 
 ```bash
 cd backend
-npx tsx db/seed.ts
+npm run db:migrate
+npm run db:seed
 ```
-
-This inserts 23 news sources (Reuters, AP, BBC, Al Jazeera, etc.).
 
 ---
 
-## 3. Run locally
+## 4. Start Dev Servers
 
-### Frontend (Vite dev server)
+Open two terminals:
 
 ```bash
-cd frontend
-npm run dev
-# → http://localhost:5173
+# Terminal 1 — Backend (Cloudflare Workers dev)
+cd backend && npx wrangler dev
+# Runs on http://localhost:8787
 ```
-
-### Backend (Wrangler local dev)
 
 ```bash
-cd backend
-# Set secrets for local dev:
-echo "DATABASE_URL=<your-connection-string>" > .dev.vars
-npx wrangler dev
-# → http://localhost:8787
+# Terminal 2 — Frontend (Vite dev server)
+cd frontend && npm run dev
+# Runs on http://localhost:5173
 ```
 
 ---
 
-## 4. Verify
+## 5. First Run
 
-- `GET http://localhost:8787/health` → `{ "ok": true }`
-- `GET http://localhost:8787/api/sources` → list of 23 seeded sources
-
----
-
-## 5. Required GitHub Secrets (for CI/CD)
-
-Add these in **GitHub → Settings → Secrets and variables → Actions**:
-
-| Secret | Where to get it |
-|--------|----------------|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare dashboard → My Profile → API Tokens |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare dashboard → right sidebar on any page |
-| `CF_PAGES_PROJECT_NAME` | Name of your Pages project (e.g. `war-dashboard`) |
-| `VITE_API_URL_PREVIEW` | Workers preview URL |
-| `VITE_API_URL_PROD` | Workers production URL |
-
-> **Note:** `DATABASE_URL` and `JWT_SECRET` are set as **Wrangler secrets** (not GitHub secrets):
-> ```bash
-> wrangler secret put DATABASE_URL
-> wrangler secret put JWT_SECRET
-> ```
+1. Open http://localhost:5173
+2. Click **Register**
+3. Enter any email + password (8+ characters)
+4. You'll land on your dashboard
+5. Add a pin (country/region) to start seeing alerts
 
 ---
 
-## 6. Cloudflare Pages Project Setup (Jay to complete)
+## 6. Running Tests
 
-1. Log in to [dash.cloudflare.com](https://dash.cloudflare.com)
-2. **Pages → Create a project → Connect to Git**
-3. Select `TMA-OC/war-dashboard`
-4. Build settings:
-   - **Framework preset:** Vue
-   - **Build command:** `cd frontend && npm run build`
-   - **Build output directory:** `frontend/dist`
-5. Add environment variable: `VITE_API_URL` → Workers URL
-6. Copy the `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` to GitHub secrets (see §5)
+```bash
+# Backend unit tests
+cd backend && npm test
+
+# Backend watch mode
+cd backend && npm run test:watch
+
+# Frontend unit tests
+cd frontend && npm run test:unit
+
+# E2E (Playwright) — requires both servers running
+npx playwright test
+```
 
 ---
 
-## 7. Troubleshooting
+## 7. Common Issues
 
-| Issue | Fix |
-|-------|-----|
-| `DATABASE_URL not set` | Check `.env` or `.dev.vars` |
-| Supabase SSL error | Add `?sslmode=require` to connection string |
-| Wrangler auth error | Run `wrangler login` |
-| Migration already exists | Safe to re-run with `IF NOT EXISTS` guards |
+### `wrangler dev` fails — "Not authenticated"
+```bash
+npx wrangler login
+# Follow browser OAuth flow
+```
+
+### Database connection refused
+- Check your `DATABASE_URL` is correct (copy fresh from Supabase)
+- Ensure your IP isn't blocked — Supabase → Settings → Database → Connection Pooling
+
+### `VITE_API_URL` requests failing (CORS)
+- Verify `FRONTEND_URL=http://localhost:5173` is set in `backend/.env`
+- Restart `wrangler dev` after `.env` changes
+
+### Port already in use
+```bash
+# Kill whatever is on 8787
+lsof -ti:8787 | xargs kill -9
+# Kill whatever is on 5173
+lsof -ti:5173 | xargs kill -9
+```
+
+### Google OAuth not working locally
+- Add `http://localhost:5173/auth/callback` to your Google OAuth app's redirect URIs
+- This requires a Google Cloud project — see backend README for setup
+
+---
+
+## 8. Useful Commands
+
+```bash
+# Reset database
+cd backend && npm run db:reset
+
+# Build frontend for production
+cd frontend && npm run build
+
+# Preview production build
+cd frontend && npm run preview
+
+# Type check
+cd frontend && npm run type-check
+cd backend && npm run type-check
+```

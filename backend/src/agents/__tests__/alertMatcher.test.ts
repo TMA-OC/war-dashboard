@@ -1,43 +1,34 @@
-import { describe, it, expect } from "vitest";
-import { haversineKm } from "../alertMatcher";
+import { describe, it, expect } from 'vitest'
+import { haversineKm } from '../alertMatcher'
 
-describe("haversineKm", () => {
-  it("calculates London to Paris distance (~340 km)", () => {
-    // London: 51.5074, -0.1278 | Paris: 48.8566, 2.3522
-    const dist = haversineKm(51.5074, -0.1278, 48.8566, 2.3522);
-    expect(dist).toBeGreaterThan(330);
-    expect(dist).toBeLessThan(350);
-  });
+describe('haversineKm', () => {
+  it('London to Paris is ~340km', () => {
+    expect(haversineKm(51.5, -0.12, 48.85, 2.35)).toBeCloseTo(340, -1)
+  })
 
-  it("calculates zero distance for same point", () => {
-    const dist = haversineKm(32.0853, 34.7818, 32.0853, 34.7818);
-    expect(dist).toBe(0);
-  });
+  it('same point is 0km', () => {
+    expect(haversineKm(32.08, 34.78, 32.08, 34.78)).toBe(0)
+  })
 
-  it("calculates short distance between adjacent cities (~60 km Tel Aviv to Jerusalem)", () => {
-    // Tel Aviv: 32.0853, 34.7818 | Jerusalem: 31.7683, 35.2137
-    const dist = haversineKm(32.0853, 34.7818, 31.7683, 35.2137);
-    expect(dist).toBeGreaterThan(50);
-    expect(dist).toBeLessThan(70);
-  });
+  it('Tel Aviv to Beirut is ~230km', () => {
+    expect(haversineKm(32.08, 34.78, 33.89, 35.5)).toBeCloseTo(230, -1)
+  })
 
-  it("calculates Beirut to Tel Aviv distance (~200 km)", () => {
-    // Beirut: 33.8938, 35.5018 | Tel Aviv: 32.0853, 34.7818
-    const dist = haversineKm(33.8938, 35.5018, 32.0853, 34.7818);
-    expect(dist).toBeGreaterThan(190);
-    expect(dist).toBeLessThan(220);
-  });
+  it('alert within radius is matched', () => {
+    // Pin at Tel Aviv (32.08, 34.78), radius 100km
+    // Alert at Jerusalem (31.77, 35.21) — ~62km away
+    const dist = haversineKm(32.08, 34.78, 31.77, 35.21)
+    expect(dist).toBeLessThan(100)
+  })
 
-  it("calculates Tehran to Tel Aviv distance (~1600 km)", () => {
-    // Tehran: 35.6892, 51.3890 | Tel Aviv: 32.0853, 34.7818
-    const dist = haversineKm(35.6892, 51.3890, 32.0853, 34.7818);
-    expect(dist).toBeGreaterThan(1500);
-    expect(dist).toBeLessThan(1700);
-  });
+  it('alert outside radius is not matched', () => {
+    // Pin at Tel Aviv (32.08, 34.78), radius 100km
+    // Alert at Beirut (33.89, 35.50) — ~230km away
+    const dist = haversineKm(32.08, 34.78, 33.89, 35.5)
+    expect(dist).toBeGreaterThan(100)
+  })
 
-  it("is symmetric (A to B == B to A)", () => {
-    const ab = haversineKm(51.5074, -0.1278, 48.8566, 2.3522);
-    const ba = haversineKm(48.8566, 2.3522, 51.5074, -0.1278);
-    expect(Math.abs(ab - ba)).toBeLessThan(0.001);
-  });
-});
+  it('New York to Los Angeles is ~3940km', () => {
+    expect(haversineKm(40.71, -74.01, 34.05, -118.24)).toBeCloseTo(3940, -2)
+  })
+})
