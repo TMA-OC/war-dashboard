@@ -111,6 +111,7 @@ export const alerts = pgTable(
     sourceIds: jsonb("source_ids").$type<string[]>().notNull().default([]),
     primarySourceId: uuid("primary_source_id").references(() => sources.id),
     dedupHash: varchar("dedup_hash", { length: 128 }).unique(),
+    dedupGroupId: uuid("dedup_group_id"),  // FK to alerts.id — set via migration
     isBreaking: boolean("is_breaking").notNull().default(false),
     publishedAt: timestamp("published_at").notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -121,6 +122,7 @@ export const alerts = pgTable(
     countryIdx: index("alerts_country_idx").on(t.countryCode),
     confidenceIdx: index("alerts_confidence_idx").on(t.confidenceScore),
     dedupIdx: uniqueIndex("alerts_dedup_idx").on(t.dedupHash),
+    dedupGroupIdx: index("alerts_dedup_group_idx").on(t.dedupGroupId),
     geoIdx: index("alerts_geo_idx").on(t.lat, t.lng),
   })
 );
