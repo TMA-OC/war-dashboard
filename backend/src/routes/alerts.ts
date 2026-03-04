@@ -1,9 +1,9 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-import { eq, desc, and, gte, inArray, sql } from "drizzle-orm";
+import { eq, desc, and, gte, sql } from "drizzle-orm";
 import { getDb } from "../../db/client";
-import { alerts, userAlerts, strikes, sources } from "../../db/schema";
+import { alerts, userAlerts, strikes } from "../../db/schema";
 import { authMiddleware, proMiddleware } from "../middleware/auth";
 import type { AppEnv } from "../types";
 
@@ -52,67 +52,8 @@ alertsRouter.get(
   }
 );
 
-// GET /alerts/:id — single alert with all source details
-alertsRouter.get("/:id", authMiddleware, async (c) => {
-  const alertId = c.req.param("id");
-  const db = getDb(c.env);
-
-  // Get the alert
-  const [alert] = await db.select().from(alerts).where(eq(alerts.id, alertId)).limit(1);
-
-  if (!alert) {
-    return c.json({ error: "Alert not found" }, 404);
-  }
-
-  // Get all sources for this alert
-  let alertSources: any[] = [];
-  if (alert.sourceIds && alert.sourceIds.length > 0) {
-    alertSources = await db
-      .select({
-        id: sources.id,
-        slug: sources.slug,
-        name: sources.name,
-        homepageUrl: sources.homepageUrl,
-        logoUrl: sources.logoUrl,
-        trustRank: sources.trustRank,
-      })
-      .from(sources)
-      .where(inArray(sources.id, alert.sourceIds));
-  }
-
-  // Get primary source details
-  let primarySource = null;
-  if (alert.primarySourceId) {
-    const [ps] = await db
-      .select({
-        id: sources.id,
-        slug: sources.slug,
-        name: sources.name,
-        homepageUrl: sources.homepageUrl,
-        logoUrl: sources.logoUrl,
-        trustRank: sources.trustRank,
-      })
-      .from(sources)
-      .where(eq(sources.id, alert.primarySourceId))
-      .limit(1);
-    primarySource = ps || null;
-  }
-
-  return c.json({
-    data: {
-      ...alert,
-      sources: alertSources,
-      primarySource,
-      sourceCount: alertSources.length,
-    },
-  });
-});
-
 // GET /alerts/global — all alerts (Pro)
-alertsRouter.get(
-  "/global",
-  authMiddleware,
-  proMiddleware,
+alertsRouter.get("/global", authMiddleware, proMiddleware,
   zValidator(
     "query",
     z.object({
@@ -174,20 +115,24 @@ alertsRouter.get("/breaking", authMiddleware, async (c) => {
 });
 
 // PATCH /alerts/:id/read
-alertsRouter.patch("/:id/read", authMiddleware, async (c) => {
-  const userId = c.get("userId");
-  const alertId = c.req.param("id");
-  const db = getDb(c.env);
+alertsRouter.patch(
+  "/:id/read",
+  authMiddleware,
+  async (c) => {
+    const userId = c.get("userId");
+    const alertId = c.req.param("id");
+    const db = getDb(c.env);
 
-  const [row] = await db
-    .update(userAlerts)
-    .set({ isRead: true, readAt: new Date() })
-    .where(and(eq(userAlerts.userId, userId), eq(userAlerts.alertId, alertId)))
-    .returning();
+    const [row] = await db
+      .update(userAlerts)
+      .set({ isRead: true, readAt: new Date() })
+      .where(and(eq(userAlerts.userId, userId), eq(userAlerts.alertId, alertId)))
+      .returning();
 
-  if (!row) return c.json({ error: "Not found" }, 404);
-  return c.json({ success: true, data: row });
-});
+    if (!row) return c.json({ error: "Not found" }, 404);
+    return c.json({ success: true, data: row });
+  }
+);
 
 // PATCH /alerts/:id/pin
 alertsRouter.patch(

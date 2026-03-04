@@ -1,22 +1,32 @@
 {
-  "name": "war-dashboard-backend",
-  "version": "1.0.0",
+  "name": "war-dashboard-api",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
-    "lint": "echo 'no linter configured yet'",
-    "type-check": "tsc --noEmit",
-    "test": "vitest run",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed": "tsx db/seed.ts",
-    "db:generate": "drizzle-kit generate"
+    "db:studio": "drizzle-kit studio",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
-    "drizzle-orm": "^0.30.0"
+    "@hono/zod-validator": "^0.4.3",
+    "bcryptjs": "^2.4.3",
+    "drizzle-orm": "^0.36.4",
+    "hono": "^4.12.3",
+    "postgres": "^3.4.8",
+    "rss-parser": "^3.13.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.21.0",
-    "tsx": "^4.0.0",
-    "typescript": "^5.0.0",
-    "vitest": "^1.0.0"
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "@types/bcryptjs": "^2.4.6",
+    "drizzle-kit": "^0.28.0",
+    "typescript": "^5.9.3",
+    "vitest": "^1.6.0",
+    "wrangler": "^3.80.0"
   }
 }
