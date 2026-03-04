@@ -1,17 +1,32 @@
+# Cloudflare Workers configuration for War Dashboard backend
+# TODO: needs CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID secrets in GitHub
+# Run: wrangler secret put DATABASE_URL  (to set the DB connection string)
+
 name = "war-dashboard-api"
 main = "src/index.ts"
-compatibility_date = "2024-10-22"
+compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
-[vars]
-FRONTEND_URL = "https://war-dashboard.vercel.app"
+# Local dev port
+[dev]
+port = 8787
 
-[[triggers]]
-crons = ["*/2 * * * *"]
+# Staging / Preview environment
+[env.preview]
+name = "war-dashboard-api-preview"
+vars = { ENVIRONMENT = "preview" }
 
-# Secrets (set via `wrangler secret put`):
-# DATABASE_URL
-# JWT_SECRET
-# GOOGLE_CLIENT_ID
-# GOOGLE_CLIENT_SECRET
-# MAPBOX_TOKEN
+# Production environment
+[env.production]
+name = "war-dashboard-api"
+vars = { ENVIRONMENT = "production" }
+
+# KV Namespaces (add after creating via: wrangler kv:namespace create "CACHE")
+# [[kv_namespaces]]
+# binding = "CACHE"
+# id = "TODO: fill in after wrangler kv:namespace create"
+
+# Secrets (set via wrangler secret put <NAME>):
+#   DATABASE_URL        — Supabase/Neon Postgres connection string
+#   JWT_SECRET          — JWT signing secret
+#   OPENAI_API_KEY      — Optional, for geocoding/classification assistance

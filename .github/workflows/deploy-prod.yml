@@ -1,0 +1,63 @@
+name: Deploy Production
+
+on:
+  push:
+    branches: [main]
+
+# TODO: needs CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID secrets in GitHub
+# TODO: needs CF_PAGES_PROJECT_NAME secret set to the Cloudflare Pages project name
+
+jobs:
+  deploy-prod:
+    name: Deploy to Production (Cloudflare Pages + Workers)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL_PROD }}
+
+      # TODO: needs CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID secrets in GitHub
+      - name: Deploy to Cloudflare Pages (Production)
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: ${{ secrets.CF_PAGES_PROJECT_NAME }}
+          directory: frontend/dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+
+      - name: Install backend deps
+        working-directory: backend
+        run: npm ci
+
+      # TODO: needs CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID secrets in GitHub
+      - name: Deploy Workers backend (Production)
+        working-directory: backend
+        run: npx wrangler deploy --env production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # TODO: Add VERCEL_PROJECT_ID and VERCEL_ORG_ID secrets (Jay creates project at vercel.com)
+      - name: Deploy to Vercel Production
+        run: npx vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --yes
+        working-directory: frontend
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
