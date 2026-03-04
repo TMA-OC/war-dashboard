@@ -188,3 +188,28 @@ export type UserAlert = typeof userAlerts.$inferSelect;
 export type NewUserAlert = typeof userAlerts.$inferInsert;
 export type Strike = typeof strikes.$inferSelect;
 export type NewStrike = typeof strikes.$inferInsert;
+
+// ─── API Keys ─────────────────────────────────────────────────────────────────
+
+export const apiKeys = pgTable(
+  "api_keys",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    keyHash: varchar("key_hash", { length: 128 }).notNull().unique(),
+    keyPrefix: varchar("key_prefix", { length: 8 }).notNull(),
+    label: varchar("label", { length: 255 }).notNull().default("Default"),
+    isActive: boolean("is_active").notNull().default(true),
+    lastUsedAt: timestamp("last_used_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    userIdx: index("api_keys_user_idx").on(t.userId),
+    hashIdx: uniqueIndex("api_keys_hash_idx").on(t.keyHash),
+  })
+);
+
+export type ApiKey = typeof apiKeys.$inferSelect;
+export type NewApiKey = typeof apiKeys.$inferInsert;

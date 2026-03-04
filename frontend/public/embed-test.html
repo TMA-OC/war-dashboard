@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Embed Widget Test — External Page</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f1f5f9; padding: 40px; color: #1e293b; }
+    h1 { margin-bottom: 8px; }
+    p { color: #64748b; margin-bottom: 24px; }
+    section { background: white; border-radius: 12px; padding: 24px; margin-bottom: 32px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+    h2 { margin-top: 0; font-size: 1rem; color: #475569; margin-bottom: 12px; }
+    iframe { display: block; border: none; border-radius: 8px; overflow: hidden; }
+  </style>
+</head>
+<body>
+  <h1>War Dashboard — Embed Test</h1>
+  <p>This page simulates an external site embedding the War Dashboard widget. No authentication is required.</p>
+
+  <section>
+    <h2>Ticker Widget (default colors)</h2>
+    <iframe src="/embed?type=ticker" width="100%" height="56" title="Ticker Widget"></iframe>
+  </section>
+
+  <section>
+    <h2>Ticker Widget (custom branding: blue / dark)</h2>
+    <iframe src="/embed?type=ticker&color=3b82f6&bg=0f172a" width="100%" height="56" title="Ticker Widget Blue"></iframe>
+  </section>
+
+  <section>
+    <h2>Feed Widget (Airstrikes topic, orange)</h2>
+    <iframe src="/embed?type=feed&topic=Airstrikes&color=f97316&bg=020617" width="100%" height="400" title="Feed Widget"></iframe>
+  </section>
+
+  <section>
+    <h2>Feed Widget (custom green theme)</h2>
+    <iframe src="/embed?type=feed&color=22c55e&bg=052e16" width="100%" height="400" title="Feed Widget Green"></iframe>
+  </section>
+</body>
+</html>

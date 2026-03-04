@@ -7,6 +7,8 @@ import authRouter from "./routes/auth";
 import alertsRouter from "./routes/alerts";
 import prefsRouter from "./routes/preferences";
 import sseRouter from "./routes/sse";
+import apiKeysRouter from "./routes/apiKeys";
+import exportRouter, { embedFeedRouter } from "./routes/export";
 import { pollAllFeeds } from "./cron/pollFeeds";
 
 export type AppEnv = {
@@ -26,7 +28,7 @@ app.use("*", prettyJSON());
 app.use(
   "*",
   cors({
-    origin: (origin, c) => c.env.FRONTEND_URL || "*",
+    origin: "*",
     allowHeaders: ["Authorization", "Content-Type"],
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   })
@@ -43,16 +45,19 @@ app.route("/auth", authRouter);
 app.route("/alerts", alertsRouter);
 app.route("/preferences", prefsRouter);
 app.route("/sse", sseRouter);
+app.route("/api-keys", apiKeysRouter);
+app.route("/export", exportRouter);
+
+// Public embed feed (no auth)
+app.route("/embed", embedFeedRouter);
 
 // ─── Cloudflare Workers export ────────────────────────────────────────────────
 
 export default {
-  // HTTP requests
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     return app.fetch(request, env, ctx);
   },
 
-  // Cron trigger (every 2 minutes)
   async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
     ctx.waitUntil(
       pollAllFeeds(env)

@@ -32,10 +32,19 @@ const router = createRouter({
       component: () => import('@/views/BroadcastView.vue'),
       meta: { requiresAuth: true, requiresPro: true },
     },
+    // Public embed route — no auth required
+    {
+      path: '/embed',
+      component: () => import('@/views/EmbedView.vue'),
+      meta: { requiresAuth: false, embed: true },
+    },
   ],
 })
 
 router.beforeEach(async (to) => {
+  // Skip all auth checks for embed route
+  if (to.meta.embed) return
+
   const auth = useAuthStore()
 
   if (to.meta.requiresAuth && !auth.isAuthenticated) {

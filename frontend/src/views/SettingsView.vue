@@ -122,7 +122,13 @@
         </div>
       </section>
 
-      <button @click="saveSettings" :disabled="saving" class="w-full bg-war-orange hover:bg-orange-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors">
+      <!-- Embed Widget -->
+      <EmbedCodeSection />
+
+      <!-- API Keys -->
+      <ApiKeySection />
+
+            <button @click="saveSettings" :disabled="saving" class="w-full bg-war-orange hover:bg-orange-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors">
         {{ saving ? 'Saving...' : 'Save Settings' }}
       </button>
     </div>
@@ -133,6 +139,8 @@
 import { ref, reactive, computed } from 'vue'
 import { useGeolocation } from '@vueuse/core'
 import AppHeader from '@/components/layout/AppHeader.vue'
+import EmbedCodeSection from '@/components/settings/EmbedCodeSection.vue'
+import ApiKeySection from '@/components/settings/ApiKeySection.vue'
 import { usePreferencesStore } from '@/stores/preferences'
 import type { Pin } from '@/types'
 
