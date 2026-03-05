@@ -259,4 +259,29 @@ auth.get("/google/callback", async (c) => {
   return c.redirect(`https://war-dashboard.pages.dev/auth/callback?token=${token}&email=${encodeURIComponent(user.email)}&tier=${user.tier}`);
 });
 
+
+// GET /auth/demo — instant demo login (no password required)
+auth.get("/demo", async (c) => {
+  const db = getDb(c.env);
+  const demoEmail = "demo@war-dashboard.dev";
+
+  let [user] = await db.select().from(users).where(eq(users.email, demoEmail)).limit(1);
+  if (!user) {
+    const [created] = await db.insert(users).values({
+      email: demoEmail,
+      displayName: "Demo User",
+      tier: "pro",
+    }).returning();
+    if (created) {
+      await db.insert(userPreferences).values({ userId: created.id });
+      user = created;
+    }
+  }
+
+  if (!user) return c.json({ error: "Failed to create demo user" }, 500);
+
+  const token = await signToken(user.id, c.env.JWT_SECRET);
+  return c.json({ token, user: { id: user.id, email: user.email, displayName: user.displayName, tier: user.tier } });
+});
+
 export default auth;
