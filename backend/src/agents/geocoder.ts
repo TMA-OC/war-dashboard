@@ -10,7 +10,7 @@
  * Hit-rate and failure stats are logged on every geocode call.
  */
 
-import { GEO_LOOKUP, type GeoLocation } from "./rssAggregator";
+import { GEO_LOOKUP, type GeoLocation } from "./geoData";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
