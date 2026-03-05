@@ -32,6 +32,12 @@ const router = createRouter({
       component: () => import('@/views/BroadcastView.vue'),
       meta: { requiresAuth: true, requiresPro: true },
     },
+    // Google OAuth callback
+    {
+      path: '/auth/callback',
+      component: () => import('@/views/AuthCallbackView.vue'),
+      meta: { requiresAuth: false },
+    },
     // Public embed route — no auth required
     {
       path: '/embed',

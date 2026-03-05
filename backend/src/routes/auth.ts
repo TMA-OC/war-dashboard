@@ -167,4 +167,96 @@ auth.get("/me", authMiddleware, (c) => {
   });
 });
 
+
+// GET /auth/google — initiate OAuth redirect flow
+auth.get("/google", (c) => {
+  const clientId = c.env.GOOGLE_CLIENT_ID;
+  const redirectUri = `${new URL(c.req.url).origin}/auth/google/callback`;
+  const scope = "openid email profile";
+  const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+  url.searchParams.set("client_id", clientId);
+  url.searchParams.set("redirect_uri", redirectUri);
+  url.searchParams.set("response_type", "code");
+  url.searchParams.set("scope", scope);
+  url.searchParams.set("access_type", "offline");
+  url.searchParams.set("prompt", "select_account");
+  return c.redirect(url.toString());
+});
+
+// GET /auth/google/callback — handle OAuth callback
+auth.get("/google/callback", async (c) => {
+  const code = c.req.query("code");
+  const error = c.req.query("error");
+
+  if (error || !code) {
+    return c.redirect("https://war-dashboard.pages.dev/login?error=oauth_denied");
+  }
+
+  const origin = new URL(c.req.url).origin;
+  const redirectUri = `${origin}/auth/google/callback`;
+
+  // Exchange code for tokens
+  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      code,
+      client_id: c.env.GOOGLE_CLIENT_ID,
+      client_secret: c.env.GOOGLE_CLIENT_SECRET,
+      redirect_uri: redirectUri,
+      grant_type: "authorization_code",
+    }),
+  });
+
+  if (!tokenRes.ok) {
+    return c.redirect("https://war-dashboard.pages.dev/login?error=token_exchange_failed");
+  }
+
+  const { id_token } = await tokenRes.json() as { id_token: string };
+
+  // Verify id_token and get user info
+  const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${id_token}`);
+  if (!googleRes.ok) {
+    return c.redirect("https://war-dashboard.pages.dev/login?error=invalid_token");
+  }
+
+  const googlePayload = await googleRes.json() as {
+    sub: string; email: string; name: string; picture: string; aud: string;
+  };
+
+  if (googlePayload.aud !== c.env.GOOGLE_CLIENT_ID) {
+    return c.redirect("https://war-dashboard.pages.dev/login?error=invalid_audience");
+  }
+
+  const db = getDb(c.env);
+  let [user] = await db.select().from(users).where(eq(users.googleId, googlePayload.sub)).limit(1);
+
+  if (!user) {
+    const [byEmail] = await db.select().from(users).where(eq(users.email, googlePayload.email)).limit(1);
+    if (byEmail) {
+      await db.update(users).set({ googleId: googlePayload.sub, avatarUrl: googlePayload.picture, updatedAt: new Date() }).where(eq(users.id, byEmail.id));
+      user = { ...byEmail, googleId: googlePayload.sub, avatarUrl: googlePayload.picture };
+    } else {
+      const [newUser] = await db.insert(users).values({
+        email: googlePayload.email,
+        googleId: googlePayload.sub,
+        displayName: googlePayload.name,
+        avatarUrl: googlePayload.picture,
+      }).returning();
+      if (newUser) {
+        await db.insert(userPreferences).values({ userId: newUser.id });
+        user = newUser;
+      }
+    }
+  }
+
+  if (!user) {
+    return c.redirect("https://war-dashboard.pages.dev/login?error=user_creation_failed");
+  }
+
+  const token = await signToken(user.id, c.env.JWT_SECRET);
+  // Redirect to frontend with token in query param — frontend reads it and stores in localStorage
+  return c.redirect(`https://war-dashboard.pages.dev/auth/callback?token=${token}&email=${encodeURIComponent(user.email)}&tier=${user.tier}`);
+});
+
 export default auth;
