@@ -21,7 +21,7 @@ export const useAlertsStore = defineStore('alerts', () => {
     loading.value = true
     try {
       const res = await api.get('/alerts', { params: { page: page.value, limit: 20 } })
-      const newAlerts = res.data.alerts || res.data
+      const newAlerts = res.data.data || res.data.alerts || []
       if (newAlerts.length < 20) hasMore.value = false
       alerts.value.push(...newAlerts)
       page.value++
@@ -31,13 +31,15 @@ export const useAlertsStore = defineStore('alerts', () => {
   }
 
   async function fetchStrikes() {
-    const res = await api.get('/strikes')
-    strikes.value = res.data.strikes || res.data
+    try {
+      const res = await api.get('/alerts/strikes')
+      strikes.value = res.data.data || res.data.strikes || []
+    } catch { /* non-critical */ }
   }
 
   async function fetchCasualties() {
-    const res = await api.get('/casualties')
-    casualties.value = res.data
+    // Casualties endpoint not yet implemented
+    casualties.value = null
   }
 
   function addAlert(alert: Alert) {

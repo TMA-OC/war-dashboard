@@ -35,10 +35,8 @@ onMounted(async () => {
   }
 
   // Store token and fetch user profile
-  localStorage.setItem('wardash_token', token)
-  auth.token = token as any
   try {
-    await auth.fetchMe()
+    await auth.loginWithToken(token)
     router.push('/dashboard')
   } catch {
     error.value = 'Failed to load profile'

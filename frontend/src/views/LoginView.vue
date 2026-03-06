@@ -108,13 +108,14 @@ async function demoLogin() {
   error.value = ''
   try {
     const res = await fetch(`${apiBase}/auth/demo`)
+    if (!res.ok) throw new Error(`Demo API error: ${res.status}`)
     const data = await res.json()
+    if (!data.token) throw new Error('No token received')
     localStorage.setItem('wardash_token', data.token)
-    auth.token = data.token
-    await auth.fetchMe()
+    await auth.loginWithToken(data.token)
     router.push('/pro')
   } catch (e: any) {
-    error.value = 'Demo login failed'
+    error.value = e.message || 'Demo login failed'
   } finally {
     loading.value = false
   }

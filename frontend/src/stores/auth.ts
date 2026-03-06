@@ -32,11 +32,17 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = res.data
   }
 
+  async function loginWithToken(newToken: string) {
+    token.value = newToken
+    localStorage.setItem('wardash_token', newToken)
+    await fetchMe()
+  }
+
   function logout() {
     token.value = null
     user.value = null
     localStorage.removeItem('wardash_token')
   }
 
-  return { user, token, isAuthenticated, isPro, login, register, fetchMe, logout }
+  return { user, token, isAuthenticated, isPro, login, register, fetchMe, loginWithToken, logout }
 })

@@ -55,9 +55,12 @@ export interface UserPreferences {
 
 export interface User {
   id: string
-  name: string
+  name?: string
+  displayName?: string
   email: string
   tier: 'individual' | 'pro'
+  avatarUrl?: string | null
+  createdAt?: string
 }
 
 export interface Casualties {
