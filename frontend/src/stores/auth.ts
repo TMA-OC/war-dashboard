@@ -19,7 +19,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function register(name: string, email: string, password: string, tier: string) {
-    const res = await api.post('/auth/register', { name, email, password, tier })
+    const res = await api.post('/auth/register', { displayName: name, email, password, tier })
     token.value = res.data.token
     user.value = res.data.user
     localStorage.setItem('wardash_token', res.data.token)

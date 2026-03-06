@@ -37,7 +37,7 @@ onMounted(async () => {
   // Store token and fetch user profile
   try {
     await auth.loginWithToken(token)
-    router.push('/dashboard')
+    router.push(auth.isPro ? '/pro' : '/dashboard')
   } catch {
     error.value = 'Failed to load profile'
     setTimeout(() => router.push('/login'), 2500)

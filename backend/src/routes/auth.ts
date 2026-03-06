@@ -29,10 +29,11 @@ auth.post(
       email: z.string().email(),
       password: z.string().min(8),
       displayName: z.string().optional(),
+      tier: z.enum(["individual", "pro"]).optional().default("individual"),
     })
   ),
   async (c) => {
-    const { email, password, displayName } = c.req.valid("json");
+    const { email, password, displayName, tier } = c.req.valid("json");
     const db = getDb(c.env);
 
     const [existing] = await db.select().from(users).where(eq(users.email, email)).limit(1);
@@ -43,7 +44,7 @@ auth.post(
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
     const [user] = await db
       .insert(users)
-      .values({ email, passwordHash, displayName: displayName ?? email.split("@")[0] })
+      .values({ email, passwordHash, displayName: displayName ?? email.split("@")[0], tier: tier ?? "individual" })
       .returning();
 
     if (!user) return c.json({ error: "Failed to create user" }, 500);
