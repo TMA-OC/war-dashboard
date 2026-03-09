@@ -136,7 +136,7 @@ import AppHeader from '@/components/layout/AppHeader.vue'
 import { usePreferencesStore } from '@/stores/preferences'
 
 const prefsStore = usePreferencesStore()
-await prefsStore.fetch()
+onMounted(async () => { await prefsStore.fetch() })
 
 const localPrefs = reactive({
   topic_tags: [...prefsStore.prefs.topic_tags],

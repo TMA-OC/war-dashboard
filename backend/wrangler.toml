@@ -30,3 +30,9 @@ vars = { ENVIRONMENT = "production" }
 #   DATABASE_URL        — Supabase/Neon Postgres connection string
 #   JWT_SECRET          — JWT signing secret
 #   OPENAI_API_KEY      — Optional, for geocoding/classification assistance
+
+# FRONTEND_URL: the URL of the deployed frontend (used in OAuth redirects)
+# Set via: wrangler secret put FRONTEND_URL
+# Default: https://war-dashboard.pages.dev
+[vars]
+FRONTEND_URL = "https://war-dashboard.pages.dev"

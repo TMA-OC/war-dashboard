@@ -8,6 +8,7 @@ export type Env = {
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   MAPBOX_TOKEN: string;
+  FRONTEND_URL: string;
 };
 
 let _db: ReturnType<typeof drizzle<typeof schema>> | null = null;

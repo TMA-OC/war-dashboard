@@ -190,7 +190,7 @@ auth.get("/google/callback", async (c) => {
   const error = c.req.query("error");
 
   if (error || !code) {
-    return c.redirect("https://war-dashboard.pages.dev/login?error=oauth_denied");
+    return c.redirect(`${c.env.FRONTEND_URL}/login?error=oauth_denied`);
   }
 
   const origin = new URL(c.req.url).origin;
@@ -210,7 +210,7 @@ auth.get("/google/callback", async (c) => {
   });
 
   if (!tokenRes.ok) {
-    return c.redirect("https://war-dashboard.pages.dev/login?error=token_exchange_failed");
+    return c.redirect(`${c.env.FRONTEND_URL}/login?error=token_exchange_failed`);
   }
 
   const { id_token } = await tokenRes.json() as { id_token: string };
@@ -218,7 +218,7 @@ auth.get("/google/callback", async (c) => {
   // Verify id_token and get user info
   const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${id_token}`);
   if (!googleRes.ok) {
-    return c.redirect("https://war-dashboard.pages.dev/login?error=invalid_token");
+    return c.redirect(`${c.env.FRONTEND_URL}/login?error=invalid_token`);
   }
 
   const googlePayload = await googleRes.json() as {
@@ -226,7 +226,7 @@ auth.get("/google/callback", async (c) => {
   };
 
   if (googlePayload.aud !== c.env.GOOGLE_CLIENT_ID) {
-    return c.redirect("https://war-dashboard.pages.dev/login?error=invalid_audience");
+    return c.redirect(`${c.env.FRONTEND_URL}/login?error=invalid_audience`);
   }
 
   const db = getDb(c.env);
@@ -252,37 +252,11 @@ auth.get("/google/callback", async (c) => {
   }
 
   if (!user) {
-    return c.redirect("https://war-dashboard.pages.dev/login?error=user_creation_failed");
+    return c.redirect(`${c.env.FRONTEND_URL}/login?error=user_creation_failed`);
   }
 
   const token = await signToken(user.id, c.env.JWT_SECRET);
   // Redirect to frontend with token in query param — frontend reads it and stores in localStorage
-  return c.redirect(`https://war-dashboard.pages.dev/auth/callback?token=${token}&email=${encodeURIComponent(user.email)}&tier=${user.tier}`);
+  return c.redirect(`${c.env.FRONTEND_URL}/auth/callback?token=${token}&email=${encodeURIComponent(user.email)}&tier=${user.tier}`);
 });
-
-
-// GET /auth/demo — instant demo login (no password required)
-auth.get("/demo", async (c) => {
-  const db = getDb(c.env);
-  const demoEmail = "demo@war-dashboard.dev";
-
-  let [user] = await db.select().from(users).where(eq(users.email, demoEmail)).limit(1);
-  if (!user) {
-    const [created] = await db.insert(users).values({
-      email: demoEmail,
-      displayName: "Demo User",
-      tier: "pro",
-    }).returning();
-    if (created) {
-      await db.insert(userPreferences).values({ userId: created.id });
-      user = created;
-    }
-  }
-
-  if (!user) return c.json({ error: "Failed to create demo user" }, 500);
-
-  const token = await signToken(user.id, c.env.JWT_SECRET);
-  return c.json({ token, user: { id: user.id, email: user.email, displayName: user.displayName, tier: user.tier } });
-});
-
 export default auth;

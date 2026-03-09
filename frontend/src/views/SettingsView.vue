@@ -136,7 +136,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useGeolocation } from '@vueuse/core'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import EmbedCodeSection from '@/components/settings/EmbedCodeSection.vue'
@@ -145,7 +145,7 @@ import { usePreferencesStore } from '@/stores/preferences'
 import type { Pin } from '@/types'
 
 const prefsStore = usePreferencesStore()
-await prefsStore.fetch()
+onMounted(async () => { await prefsStore.fetch() })
 
 const localPrefs = reactive({
   nationality: [...prefsStore.prefs.nationality],

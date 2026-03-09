@@ -57,16 +57,6 @@
           Sign in with Google
         </a>
 
-
-        <button
-          type="button"
-          @click="demoLogin"
-          :disabled="loading"
-          class="flex items-center justify-center gap-2 w-full bg-emerald-700 hover:bg-emerald-600 border border-emerald-600 text-white font-medium py-2.5 rounded-lg transition-colors mt-2"
-        >
-          ⚡ Skip Sign In — Demo Mode (Pro)
-        </button>
-
         <p class="text-center text-sm text-slate-500 mt-6">
           Don't have an account?
           <RouterLink to="/register" class="text-war-orange hover:underline">Register</RouterLink>
@@ -98,24 +88,6 @@ async function submit() {
     router.push(user.tier === 'pro' ? '/pro' : '/dashboard')
   } catch (e: any) {
     error.value = e.response?.data?.error || 'Invalid email or password'
-  } finally {
-    loading.value = false
-  }
-}
-
-async function demoLogin() {
-  loading.value = true
-  error.value = ''
-  try {
-    const res = await fetch(`${apiBase}/auth/demo`)
-    if (!res.ok) throw new Error(`Demo API error: ${res.status}`)
-    const data = await res.json()
-    if (!data.token) throw new Error('No token received')
-    localStorage.setItem('wardash_token', data.token)
-    await auth.loginWithToken(data.token)
-    router.push('/pro')
-  } catch (e: any) {
-    error.value = e.message || 'Demo login failed'
   } finally {
     loading.value = false
   }
